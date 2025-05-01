@@ -3,19 +3,19 @@ from flask_cors import CORS
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# Initialize Flask app
+# Initialize Flask
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
-# Setup Google Sheets API
+# Google Sheets setup
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name('service_account.json', scope)
 client = gspread.authorize(creds)
 
-# ✅ Your actual Sheet ID
-SHEET_ID = '1MwNaqdsGKLIBO60EU84AyvwUX6mspBdrxagFiKSlNQg'  # YujFoundation Sheet
-ACTIVE_SHEET = 'ActiveUsers'
-SETTINGS_SHEET = 'Settings'
+# Configuration to match the Apps Script
+SHEET_ID = '1MwNaqdsGKLIBO60EU84AyvwUX6mspBdrxagFiKSlNQg'
+ACTIVE_SHEET = 'ActiveUsers'  # where phone numbers are stored
+LINK_CELL = 'E2'  # where the Meet link is stored
 
 @app.route('/')
 def home():
@@ -24,28 +24,29 @@ def home():
 @app.route('/verify', methods=['POST'])
 def verify_user():
     phone = request.json.get('phone', '').strip()
+    print(f"📞 Verifying phone: {phone}")
 
     if not phone:
         return jsonify({'status': 'error', 'message': 'Phone number required'}), 400
 
     try:
-        # Read active user numbers
         sheet = client.open_by_key(SHEET_ID).worksheet(ACTIVE_SHEET)
-        numbers = sheet.col_values(1)[1:]  # skip header row
+        numbers = sheet.col_values(1)[1:]  # skip header
 
-        if phone in numbers:
-            settings = client.open_by_key(SHEET_ID).worksheet(SETTINGS_SHEET)
-            meet_link = settings.acell('E2').value.strip()
+        if phone in [num.strip() for num in numbers]:
+            print("✅ Phone found in sheet")
 
-            if meet_link:
-                return jsonify({'status': 'success', 'link': meet_link})
+            meet_link = sheet.acell(LINK_CELL).value
+            if meet_link and meet_link.strip() != "":
+                return jsonify({'status': 'success', 'link': meet_link.strip()})
             else:
                 return jsonify({'status': 'not_scheduled'})
         else:
             return jsonify({'status': 'not_found'})
 
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        print(f"❌ ERROR: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'Something went wrong. Please contact support.'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
