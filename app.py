@@ -2,13 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from razorpay_webhook import webhook_bp  # ✅ Add this
+from razorpay_webhook import razorpay_webhook_bp  # ✅ Correct import
 
 # Initialize Flask
 app = Flask(__name__)
 CORS(app)
 
-app.register_blueprint(webhook_bp, url_prefix='/webhook')  # ✅ Register webhook route
+app.register_blueprint(razorpay_webhook_bp, url_prefix='/webhook')  # ✅ Correct route  # ✅ Register webhook route
 
 
 # Google Sheets setup
