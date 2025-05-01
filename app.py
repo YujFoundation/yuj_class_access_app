@@ -2,10 +2,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from razorpay_webhook import webhook_bp  # ✅ Add this
 
 # Initialize Flask
 app = Flask(__name__)
 CORS(app)
+
+app.register_blueprint(webhook_bp, url_prefix='/webhook')  # ✅ Register webhook route
+
 
 # Google Sheets setup
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
