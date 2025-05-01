@@ -4,11 +4,13 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from razorpay_webhook import razorpay_webhook_bp  # ✅ Correct import
 
-# Initialize Flask
 app = Flask(__name__)
 CORS(app)
 
-app.register_blueprint(razorpay_webhook_bp, url_prefix='/webhook')  # ✅ Correct route  # ✅ Register webhook route
+# ✅ Register blueprint WITHOUT prefix
+app.register_blueprint(razorpay_webhook_bp)
+
+# ... (rest of your existing code for Google Sheets and /verify)
 
 
 # Google Sheets setup
