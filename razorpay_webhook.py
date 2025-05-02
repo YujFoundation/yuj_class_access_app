@@ -21,6 +21,17 @@ def verify_signature(payload, received_signature):
         print(f"❌ Signature verification failed: {e}")
         return False
 
+def flatten_dict(d, parent_key='', sep='.'):
+    """Flattens nested Razorpay fields like upi.vpa or acquirer_data.rrn"""
+    items = {}
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.update(flatten_dict(v, new_key, sep=sep))
+        else:
+            items[new_key] = v
+    return items
+
 def append_dynamic_row(data):
     try:
         print("📥 Connecting to Google Sheet...")
@@ -29,15 +40,26 @@ def append_dynamic_row(data):
         client = gspread.authorize(creds)
         sheet = client.open_by_key(SHEET_ID).worksheet(SHEET_NAME)
 
+        # Read existing headers or initialize
         headers = sheet.row_values(1)
-        if not headers:
-            headers = list(data.keys())
-            headers.append('timestamp')
-            sheet.append_row(headers)
-            print("✅ Headers added:", headers)
+        flat_data = flatten_dict(data)
+        flat_data['timestamp'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        row = [str(data.get(h, '')) for h in headers[:-1]]
-        row.append(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        if not headers:
+            headers = list(flat_data.keys())
+            sheet.append_row(headers)
+            print("✅ Headers initialized:", headers)
+        else:
+            # Add new headers if they appear
+            for key in flat_data:
+                if key not in headers:
+                    headers.append(key)
+                    print(f"➕ Added new header: {key}")
+            sheet.delete_row(1)
+            sheet.insert_row(headers, 1)
+
+        # Create row in correct header order
+        row = [str(flat_data.get(h, '')) for h in headers]
         sheet.append_row(row)
         print("✅ Data row added:", row)
 
