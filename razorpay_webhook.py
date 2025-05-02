@@ -11,7 +11,7 @@ razorpay_webhook_bp = Blueprint('razorpay_webhook', __name__)
 RAZORPAY_SECRET = b'yfpc100#yfpc100#'
 SHEET_ID = '1MwNaqdsGKLIBO60EU84AyvwUX6mspBdrxagFiKSlNQg'
 SHEET_NAME = 'PaymentsRaw'
-CREDENTIALS_FILE = 'credentials.json'
+CREDENTIALS_FILE = 'service_account.json'
 
 def verify_signature(payload, received_signature):
     try:
