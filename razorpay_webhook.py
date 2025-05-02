@@ -40,27 +40,30 @@ def append_dynamic_row(data):
         client = gspread.authorize(creds)
         sheet = client.open_by_key(SHEET_ID).worksheet(SHEET_NAME)
 
-        # Read existing headers or initialize
-        headers = sheet.row_values(1)
         flat_data = flatten_dict(data)
         flat_data['timestamp'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+        headers = sheet.row_values(1)
+
+        # If sheet is empty, initialize headers and write at A1
         if not headers:
             headers = list(flat_data.keys())
-            sheet.append_row(headers)
+            headers.append('timestamp')
+            sheet.update('A1', [headers])
             print("✅ Headers initialized:", headers)
-        else:
-            # Add new headers if they appear
-            for key in flat_data:
-                if key not in headers:
-                    headers.append(key)
-                    print(f"➕ Added new header: {key}")
-            sheet.delete_row(1)
-            sheet.insert_row(headers, 1)
 
-        # Create row in correct header order
+        # Re-read updated headers and prepare row data
+        headers = sheet.row_values(1)
+        for key in flat_data:
+            if key not in headers:
+                headers.append(key)
+                print(f"➕ Added new header: {key}")
+                sheet.update('A1', [headers])  # Update updated headers
+
         row = [str(flat_data.get(h, '')) for h in headers]
-        sheet.append_row(row)
+
+        next_row = len(sheet.get_all_values()) + 1
+        sheet.update(f'A{next_row}', [row])
         print("✅ Data row added:", row)
 
     except Exception as e:
